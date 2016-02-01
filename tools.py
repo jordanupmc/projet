@@ -61,12 +61,13 @@ class GardienStrategy(BaseStrategy):
 
     def compute_strategy(self, state,id_team, id_player):
         a=App(state,id_team,id_player)
+
         
         if a.ball_position().x<(settings.GAME_WIDTH/2) or a.ball_position().x>(settings.GAME_WIDTH/2):  #la balle a traverse la moitie de terrain
             dep=a.ball_position()-a.my_position()            #--> bloquer le passage de la balle 
             dep.x=0
-            if a.my_position().distance(a.ball_position()) < (settings.BALL_RADIUS+settings.PLAYER_RADIUS):  # Shoot ou pas
-                return SoccerAction(dep,Vector2D(10,0))
+            if a.my_position().distance(a.ball_position()) < (settings.BALL_RADIUS+settings.PLAYER_RADIUS):  # Degagement ou pas
+                return SoccerAction(dep,Vector2D(10,0))   
             return SoccerAction(dep,Vector2D())
 
         if a.my_position().distance(Vector2D(settings.GAME_GOAL_HEIGHT/1.5,settings.GAME_HEIGHT/2)) > settings.PLAYER_RADIUS: #Si le Gardien n'est pas dans ces cages
