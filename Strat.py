@@ -20,45 +20,61 @@ class FonceurStrategy(BaseStrategy):
 
     def compute_strategy(self, state,id_team, id_player):
         a=App(state,id_team,id_player)
-        p=state.player_state(id_team,id_player)
-        if p.position.distance(state.ball.position) < (settings.BALL_RADIUS+settings.PLAYER_RADIUS): #Possibilite de tir
-            if id_team == 1:
-                if a.ball_position().x > (settings.GAME_WIDTH)-settings.GAME_WIDTH/4 and a.ball_position().y < (settings.GAME_WIDTH)-settings.GAME_WIDTH/4 and a.ball_position().y > settings.GAME_WIDTH/4: #Tirer fort si dans 1/4 du terrain
-                    return SoccerAction(state.ball.position-p.position,Vector2D(10,0))
-                return SoccerAction(state.ball.position-p.position,Vector2D(1.2,0))  #Conduite de balle sinon
-            if id_team == 2:
-                if a.ball_position().x < settings.GAME_WIDTH/4 and a.ball_position().y < (settings.GAME_WIDTH)-settings.GAME_WIDTH/4 and a.ball_position().y > settings.GAME_WIDTH/4:
-                    return SoccerAction(state.ball.position-p.position,Vector2D(-10,0)) 
-                return SoccerAction(state.ball.position-p.position,Vector2D(-1.2,0)) 
-        return SoccerAction(state.ball.position-p.position,Vector2D())   
-
-
-
+        return fonceur(a)
+ 
+#TODO MIRROR 
 class GardienStrategy(BaseStrategy):
     def __init__(self):
         BaseStrategy.__init__(self, "Gardien")
 
     def compute_strategy(self, state,id_team, id_player):
         a=App(state,id_team,id_player)
-
-        #Limite des cages
-        if a.my_position().y >= (settings.GAME_HEIGHT/2)+settings.GAME_GOAL_HEIGHT/2 and not a.my_position().distance(a.ball_position()) < (settings.BALL_RADIUS+settings.PLAYER_RADIUS):
-            return a.go_goal()
-        if a.my_position().y <= (settings.GAME_HEIGHT/2)-settings.GAME_GOAL_HEIGHT/2 and not  a.my_position().distance(a.ball_position()) < (settings.BALL_RADIUS+settings.PLAYER_RADIUS):
-            return a.go_goal()
-
-        if a.ball_position().x<(settings.GAME_WIDTH/2) or a.ball_position().x>(settings.GAME_WIDTH/2):  #la balle a traverse la moitie de terrain
-            dep=a.ball_position()-a.my_position()            #--> bloquer le passage de la balle 
-            dep.x=0
-            if a.my_position().distance(a.ball_position()) < (settings.BALL_RADIUS+settings.PLAYER_RADIUS):  # Shoot ou pas
-                if a.ball_position().y >= settings.GAME_HEIGHT/2: 
-                    return SoccerAction(dep,Vector2D(10,-1))
-                else:
-                    return SoccerAction(dep,Vector2D(10,1)) 
-            return SoccerAction(dep,Vector2D())
-
-        if a.my_position().distance(Vector2D(settings.GAME_GOAL_HEIGHT/1.5,settings.GAME_HEIGHT/2)) > settings.PLAYER_RADIUS: #Si le Gardien n'est pas dans ces cages
-            return a.go_goal()             # --> Aller dans les cages
-        #On est dans les cages
+        if a.is_ball_near_goal(4.5) ==1:
+            return gardien(a)
+        return go_vers_ball(a)+degager(a)
        
-        return SoccerAction()
+#################
+
+def go_vers_ball(app):
+    return app.vers_ball()
+
+def degager(app):
+    if app.can_shoot() == 0:
+        if app.key[0]==2:
+            return SoccerAction(Vector2D(),Vector2D(-10,0)) 
+        return SoccerAction(Vector2D(),Vector2D(10,0)) 
+    return SoccerAction(Vector2D(),Vector2D())
+
+def conduite_ball(app):
+    if app.can_shoot() == 0:
+        return app.conduire_ball()
+    return SoccerAction(Vector2D(),Vector2D())
+
+
+def fonceur(a):
+    if a.is_ball_near_goal(5) == 0:
+        return go_vers_ball(a)+degager(a)
+    return go_vers_ball(a)+conduite_ball(a)
+
+
+def gardien(a):
+    if a.is_out_goal() == 0:  #Si il etait dans les cages et qu'il en est sortit
+        return a.go_goal()+degage_cote(a)
+    if a.is_ball_in_my_camp() == 0: #balle dans ma moitie de terain
+        return degage_cote(a)
+    if a.is_in_goal() == 0: #initilisation 
+        return a.go_goal()
+
+    return SoccerAction()
+    
+
+def degage_cote(a):
+    dep=a.ball_position-a.my_position            #--> bloquer le passage de la balle 
+    dep.x=0
+    if a.can_shoot() == 0:  # Shoot ou pas
+        if a.ball_position.y >= settings.GAME_HEIGHT/2: 
+            return SoccerAction(dep,Vector2D(10,-1))
+        else:
+            return SoccerAction(dep,Vector2D(10,1)) 
+    return SoccerAction(dep,Vector2D())
+    
