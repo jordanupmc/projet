@@ -1,7 +1,6 @@
-from tools import *
-
+from Strat import *
             
-team1=SoccerTeam("equipe1",[Player("Iniesta",GardienStrategy())])
+team1=SoccerTeam("equipe1",[Player("Bravo",GardienStrategy())])
 team2=SoccerTeam("equipe2",[Player("t2j1",FonceurStrategy())])
 team3=SoccerTeam("equipe3",[Player("t3j1",RandomStrategy())])
 match=SoccerMatch(team1,team2)
