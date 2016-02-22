@@ -1,10 +1,11 @@
-import soccersimulator, soccersimulator.settings
+import soccersimulator, soccersimulator.settings, cPickle
 
 from soccersimulator import BaseStrategy, Vector2D, SoccerAction, settings
 
 from soccersimulator import SoccerTeam, SoccerMatch
 from soccersimulator import Player, SoccerTournament,KeyboardStrategy
 from tools import *
+
 
 class RandomStrategy(BaseStrategy):
     def __init__(self):
@@ -47,26 +48,21 @@ class GardienStrategy(BaseStrategy):
         
         return go_vers_ball(a)+degage_cote(a)
 
-"""
-class ArbreStrategy(SoccerStrategy):
-    def __init__(self, gen_feat, tree, dic_strat):
-        self.name="Arbre"
-        self.tree=tree
-        self.gen_feat=gen_feat
-        self.dic_strat=dic_strat
-    def compute_strategy(self,idteam,idplayer,state):
-        strat=self.tree.predict(self.gen_feat(idteam,idplayer,state))
-        return dic_strat[strat].compute_strategy(idteam,id_player,state)
-"""
+
+class DTreeStrategy(BaseStrategy):
+    def __init__(self,tree,dic,gen_feat):
+        BaseStrategy.__init__(self,"Tree Strategy")
+        self.dic = dic
+        self.tree = tree
+        self.gen_feat= gen_feat
+    def compute_strategy(self, state, id_team, id_player):
+        label = self.tree.predict(self.gen_feat(state,id_team,id_player))[0]
+        if label not in self.dic:
+            print("Erreur : strategie %s non trouve" %(label,))
+            return SoccerAction()
+        return self.dic[label].compute_strategy(state,id_team,id_player)
 
 
-strat_key = KeyboardStrategy("test.tree")
-strat_key.add("a",RandomStrategy())
-strat_key.add("z",FonceurStrategy())
-strat_key.add("e",GardienStrategy())
-
-
-    
 #################
 
 def go_vers_ball(app):
@@ -109,6 +105,34 @@ def degage_cote(a):
         else:
             return SoccerAction(dep,Vector2D(-(3.14),5))
     return SoccerAction(dep,Vector2D())
+
+###Tree#########
+
+def gen_feat(state, player, idteam):
+    a=App(state,id_team,player)
+    
+    bpos = state.ball.position
+    mpos = state.player_state(id_team,id_player).position
+    myg = Vector2D((id_team-1)*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.)
+    hisg = Vector2D((2-id_team)*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.)
+
+    return [bpos.distance(mpos),bpos.distance(myg),bpos.distance(hisg)]
+
+
+def build_apprentissage(fn,generator):
+    ex_raw = KeyboardStrategy.read(fn)
+    exemples = []
+    labels = []
+    for x in ex_raw:
+        exemples.append(generator(x[1],x[0][0],x[0][1]))
+        labels.append(x[0][2])
+    return exemples,labels
+
+def apprendre_arbre(train,labels,depth=5):
+    tree= DecisionTreeClassifier()
+    tree.fit(train,labels)
+    return tree
+
     
 
   #MIROR#########################
@@ -131,4 +155,6 @@ def miroir(state):
         state.player_state(idteam,idplayer).position=miroir_point(state.player_state(idteam,idplayer).position)
         state.player_state(idteam,idplayer).vitesse=miroir_v(state.player_state(idteam,idplayer).vitesse)        
     return state
+
+
     ###########################################
