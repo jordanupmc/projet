@@ -3,7 +3,7 @@ import soccersimulator, soccersimulator.settings
 from soccersimulator import BaseStrategy, Vector2D, SoccerAction, settings
 
 from soccersimulator import SoccerTeam, SoccerMatch
-from soccersimulator import Player, SoccerTournament
+from soccersimulator import Player, SoccerTournament,KeyboardStrategy
 from tools import *
 
 class RandomStrategy(BaseStrategy):
@@ -23,10 +23,9 @@ class FonceurStrategy(BaseStrategy):
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
             return miroir_action(fonceur(a))
-            
         return fonceur(a)
  
-#TODO MIRROR 
+ 
 class GardienStrategy(BaseStrategy):
     def __init__(self):
         BaseStrategy.__init__(self, "Gardien")
@@ -37,19 +36,37 @@ class GardienStrategy(BaseStrategy):
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
 
-        print a.is_ball_near_goal(4.5)
         
-        if a.is_ball_near_goal(4.5) == 1:
+        if a.near_ball(20) == 1 or a.is_out_goal()==0:
             if a.key[0] ==2:
                return miroir_action(gardien(a))
             return gardien(a)
         
         if a.key[0] ==2:
            return miroir_action(go_vers_ball(a))+miroir_action(degager(a))
+        
+        return go_vers_ball(a)+degage_cote(a)
 
-        print 'Go'
-        return go_vers_ball(a)+degager(a)
-       
+"""
+class ArbreStrategy(SoccerStrategy):
+    def __init__(self, gen_feat, tree, dic_strat):
+        self.name="Arbre"
+        self.tree=tree
+        self.gen_feat=gen_feat
+        self.dic_strat=dic_strat
+    def compute_strategy(self,idteam,idplayer,state):
+        strat=self.tree.predict(self.gen_feat(idteam,idplayer,state))
+        return dic_strat[strat].compute_strategy(idteam,id_player,state)
+"""
+
+
+strat_key = KeyboardStrategy("test.tree")
+strat_key.add("a",RandomStrategy())
+strat_key.add("z",FonceurStrategy())
+strat_key.add("e",GardienStrategy())
+
+
+    
 #################
 
 def go_vers_ball(app):
@@ -57,7 +74,7 @@ def go_vers_ball(app):
 
 def degager(app):
     if app.can_shoot() == 0:
-        return SoccerAction(Vector2D(),Vector2D(10,0)) 
+        return SoccerAction(Vector2D(),Vector2D(5,0)) 
     return SoccerAction(Vector2D(),Vector2D())
 
 def conduite_ball(app):
@@ -67,7 +84,7 @@ def conduite_ball(app):
 
 
 def fonceur(a):
-    if a.is_ball_near_goal(3.8) == 0:
+    if a.is_ball_near_goal(3.8) == 0:#3.8
         return go_vers_ball(a)+degager(a)
     return go_vers_ball(a)+conduite_ball(a)
 
@@ -77,9 +94,8 @@ def gardien(a):
         return a.go_goal()+degage_cote(a)
     if a.is_ball_in_my_camp() == 0: #balle dans ma moitie de terain
         return degage_cote(a)
-    if a.is_in_goal() == 0: #initilisation 
+    if a.is_in_goal() == 0: #initialisation 
         return a.go_goal()
-
     return SoccerAction()
     
 
@@ -87,10 +103,11 @@ def degage_cote(a):
     dep=a.ball_position-a.my_position            #--> bloquer le passage de la balle 
     dep.x=0
     if a.can_shoot() == 0:  # Shoot ou pas
+        
         if a.ball_position.y >= settings.GAME_HEIGHT/2: 
             return SoccerAction(dep,Vector2D((3.14),5)) # angle a modifie
         else:
-            return SoccerAction(dep,Vector2D(-(3.14),5)) 
+            return SoccerAction(dep,Vector2D(-(3.14),5))
     return SoccerAction(dep,Vector2D())
     
 

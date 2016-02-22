@@ -31,7 +31,7 @@ class App(object):
         return SoccerAction(self.ball_position-self.my_position,Vector2D())
     
     def go_goal(self): #sans ballon
-        return SoccerAction(Vector2D(settings.GAME_GOAL_HEIGHT/1.5,settings.GAME_HEIGHT/2)-self.my_position,Vector2D())
+        return SoccerAction(Vector2D(settings.GAME_GOAL_HEIGHT/1.1,settings.GAME_HEIGHT/2)-self.my_position,Vector2D())
         #    return SoccerAction(Vector2D(settings.GAME_WIDTH-(settings.GAME_GOAL_HEIGHT/1.5),settings.GAME_HEIGHT/2)-self.my_position,Vector2D())
         
     def conduire_ball(self):
@@ -42,7 +42,6 @@ class App(object):
         if self.key[0] == 1:
             if self.ball_position.x > (settings.GAME_WIDTH)-(settings.GAME_WIDTH/pourcentage): #and self.ball_position.y < (settings.GAME_WIDTH)-settings.GAME_WIDTH/4 and self.ball_position.y > settings.GAME_WIDTH/4:
                 return 0
-            print 'HEY'
             return 1
         
         if self.ball_position.x > -(settings.GAME_WIDTH/pourcentage-(settings.GAME_WIDTH)): #and self.ball_position.y < (settings.GAME_WIDTH)-settings.GAME_WIDTH/4 and self.ball_position.y > settings.GAME_WIDTH/4:
@@ -50,20 +49,28 @@ class App(object):
         return 1
 
     
+    def near_ball(self, pourcentage):
+       if self.my_position.distance(self.ball_position) <= (settings.BALL_RADIUS+settings.PLAYER_RADIUS)+pourcentage*2.7:
+           return 0
+       return 1
+
+    
     def is_in_goal(self): # test si le gardien est dans les cages 
-        if self.my_position.distance(Vector2D(settings.GAME_GOAL_HEIGHT/1.5,settings.GAME_HEIGHT/2)) > settings.PLAYER_RADIUS:
+        if self.my_position.distance(Vector2D(settings.GAME_GOAL_HEIGHT/1.1,settings.GAME_HEIGHT/2)) > settings.PLAYER_RADIUS:
             return 0
         
-        if self.my_position.distance(Vector2D(settings.GAME_WIDTH-settings.GAME_GOAL_HEIGHT/1.5,settings.GAME_HEIGHT/2)) > settings.PLAYER_RADIUS: #Miror
+        if self.my_position.distance(Vector2D(settings.GAME_WIDTH-settings.GAME_GOAL_HEIGHT/1.1,settings.GAME_HEIGHT/2)) > settings.PLAYER_RADIUS: #Miror
             return 0
         return 1
 
-    def is_out_goal(self): # test si gardien sort de sa zone et qu'il ne peut pas shooter 
-        if self.my_position.y >= (settings.GAME_HEIGHT/2)+settings.GAME_GOAL_HEIGHT/2 or self.my_position.x >= settings.GAME_GOAL_HEIGHT*1.5:
-            return 0
-        if self.my_position.y <= (settings.GAME_HEIGHT/2)-settings.GAME_GOAL_HEIGHT/2 or self.my_position.x <= settings.GAME_WIDTH-(settings.GAME_GOAL_HEIGHT*1.5): #miror
+    def is_out_goal(self): # test si gardien sort de sa zone et qu'il ne peut pas shooter
+    
+        if self.my_position.y >= (settings.GAME_HEIGHT/1.1)+settings.GAME_GOAL_HEIGHT/2 or self.my_position.x >= settings.GAME_GOAL_HEIGHT*1.5:
             return 0
         return 1
+     #   if self.my_position.y >= (settings.GAME_HEIGHT/1.1)+settings.GAME_GOAL_HEIGHT/2 or self.my_position.x >= (settings.GAME_GOAL_HEIGHT*1.5): #miror
+     #       return 0
+     #   return 1
     
     def is_ball_in_my_camp(self):
         if self.key[0] == 1:

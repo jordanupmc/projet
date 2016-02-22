@@ -1,6 +1,9 @@
 from Strat import *
 
-team1=SoccerTeam("equipe1",[Player("Bravo",GardienStrategy())])
+#team1=SoccerTeam("equipe1",[Player("Bravo",GardienStrategy())])
+#team11=SoccerTeam("equipe11",[Player("Costa",FonceurStrategy())])
+
+team1=SoccerTeam("equipe1",[Player("Bravo",strat_key)])
 team11=SoccerTeam("equipe11",[Player("Costa",FonceurStrategy())])
 
 team2=SoccerTeam("equipe2",[Player("Zizou",FonceurStrategy()),Player("Bravo",GardienStrategy())])
