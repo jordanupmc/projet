@@ -81,8 +81,22 @@ class App(object):
                 return 0
         return 1
 
-    
-  
+    def enemy_close_position(self):
+        i=0
+        ii=0
+        for(idteam,idplayer) in state.players:
+            p=self.state.player_state(idteam,idplayer)
+            p_next=self.state.player_state(self.state.player_state.index+1)
+            if self.my_position.distance(p.my_position) < self.my_position.distance(p_next) and idteam!=self.key[0]:
+                i=ii
+            else if self.key[0]!=idteam:
+                i=ii+1
+            ii++
+        return self.state.player_state(i).my_position
+
+ #    def friend_close_position(self):
+        
+
 #func
 #ball dans quel moitie de terrain
 #

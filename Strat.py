@@ -115,8 +115,17 @@ def gen_feat(state, player, idteam):
     mpos = state.player_state(id_team,id_player).position
     myg = Vector2D((id_team-1)*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.)
     hisg = Vector2D((2-id_team)*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.)
+    
+#distance par rapport aux bord
 
-    return [bpos.distance(mpos),bpos.distance(myg),bpos.distance(hisg)]
+#distance du coequipier le plus proche
+
+#distance de l'adversaire le plus proche
+    enemy_pos=a.enemy_close_position()
+#score actuel ?
+#nb de joueurs ?
+
+    return [bpos.distance(mpos),bpos.distance(myg),bpos.distance(hisg),enemy_pos.distance(mpos)]
 
 
 def build_apprentissage(fn,generator):
