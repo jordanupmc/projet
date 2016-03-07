@@ -82,17 +82,29 @@ class App(object):
         return 1
 
     def enemy_close_position(self):
+        """
+        description de la fonction
+        comment elle le réalise
+        """
+        #i : 
         i=0
         ii=0
-        for(idteam,idplayer) in state.players:
-            p=self.state.player_state(idteam,idplayer)
-            p_next=self.state.player_state(self.state.player_state.index+1)
-            if self.my_position.distance(p.my_position) < self.my_position.distance(p_next) and idteam!=self.key[0]:
+        for k in range(len(self.state.players)-1):
+            id_team,id_player = self.state.players[k]
+            id_team_next,id_player_next = self.state.players[k+1]
+            
+            p=self.state.player_state(id_team,id_player)
+            p_next=self.state.player_state(id_team_next,id_player_next)
+            
+            if self.my_position.distance(p.position) < self.my_position.distance(p_next.position) and id_team!=self.key[0] and id_team_next!=self.key[0]:
                 i=ii
-            else if self.key[0]!=idteam:
-                i=ii+1
-            ii++
-        return self.state.player_state(i).my_position
+            else:
+                if self.key[0]!=id_team and id_team_next!=self.key[0]:
+                    i=ii+1
+            ii=ii+1
+
+            it,ip=self.state.players[i]
+        return self.state.player_state(it,ip).position
 
  #    def friend_close_position(self):
         

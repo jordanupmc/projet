@@ -1,6 +1,6 @@
 import soccersimulator, soccersimulator.settings, cPickle
 
-from soccersimulator import BaseStrategy, Vector2D, SoccerAction, settings
+from soccersimulator import BaseStrategy, Vector2D, SoccerAction, settings,DecisionTreeClassifier
 
 from soccersimulator import SoccerTeam, SoccerMatch
 from soccersimulator import Player, SoccerTournament,KeyboardStrategy
@@ -48,6 +48,30 @@ class GardienStrategy(BaseStrategy):
         
         return go_vers_ball(a)+degage_cote(a)
 
+class OneOneStrategy(BaseStrategy):
+    def __init__(self):
+        BaseStrategy.__init__(self, "OnevOne")
+    def compute_strategy(self, state,id_team, id_player):
+        a=App(state,id_team,id_player)
+        
+        if a.key[0]==2:
+            a=App(miroir(state),id_team,id_player)
+            
+        if a.is_ball_in_my_camp() == 0 :
+            if a.near_ball(20) == 1 or a.is_out_goal()==0:
+                if a.key[0] ==2:
+                    return miroir_action(gardien(a))
+            return gardien(a)
+        
+            if a.key[0] ==2:
+                return miroir_action(go_vers_ball(a))+miroir_action(degager(a))
+        
+            return go_vers_ball(a)+degage_cote(a)
+        else:
+            if a.key[0]==2:
+                return miroir_action(fonceur(a))
+            return fonceur(a)
+            
 
 class DTreeStrategy(BaseStrategy):
     def __init__(self,tree,dic,gen_feat):
@@ -56,12 +80,29 @@ class DTreeStrategy(BaseStrategy):
         self.tree = tree
         self.gen_feat= gen_feat
     def compute_strategy(self, state, id_team, id_player):
-        label = self.tree.predict(self.gen_feat(state,id_team,id_player))[0]
+        
+        #label = self.tree.predict(self.gen_feat(state,id_team,id_player))[0]
+        features=self.gen_feat(state,id_team,id_player)
+        #print features
+        label=self.tree.predict(features)[0]
         if label not in self.dic:
             print("Erreur : strategie %s non trouve" %(label,))
             return SoccerAction()
         return self.dic[label].compute_strategy(state,id_team,id_player)
-
+    
+def affiche_arbre(tree):
+    long = 10
+    sep1="|"+"-"*(long-1)
+    sepl="|"+" "*(long-1)
+    sepr=" "*long
+    def aux(node,sep):
+        if tree.tree_.children_left[node]<0:
+            ls ="(%s)" % (", ".join( "%s: %d" %(tree.classes_[i],int(x)) for i,x in enumerate(tree.tree_.value[node].flat)))
+            return sep+sep1+"%s\n" % (ls,)
+        return (sep+sep1+"X%d<=%0.2f\n"+"%s"+sep+sep1+"X%d>%0.2f\n"+"%s" )% \
+                    (tree.tree_.feature[node],tree.tree_.threshold[node],aux(tree.tree_.children_left[node],sep+sepl),
+                    tree.tree_.feature[node],tree.tree_.threshold[node],aux(tree.tree_.children_right[node],sep+sepr))
+    return aux(0,"")
 
 #################
 
@@ -108,8 +149,8 @@ def degage_cote(a):
 
 ###Tree#########
 
-def gen_feat(state, player, idteam):
-    a=App(state,id_team,player)
+def gen_features(state, id_team, id_player):
+    a=App(state,id_team,id_player)
     
     bpos = state.ball.position
     mpos = state.player_state(id_team,id_player).position
@@ -125,7 +166,7 @@ def gen_feat(state, player, idteam):
 #score actuel ?
 #nb de joueurs ?
 
-    return [bpos.distance(mpos),bpos.distance(myg),bpos.distance(hisg),enemy_pos.distance(mpos)]
+    return [bpos.distance(mpos),bpos.distance(myg),bpos.distance(hisg),enemy_pos.distance(bpos)]
 
 
 def build_apprentissage(fn,generator):
@@ -137,11 +178,12 @@ def build_apprentissage(fn,generator):
         labels.append(x[0][2])
     return exemples,labels
 
-def apprendre_arbre(train,labels,depth=5):
-    tree= DecisionTreeClassifier()
+
+
+def apprendre_arbre(train,labels,depth=5,min_samples_leaf=2,min_samples_split=2):
+    tree= DecisionTreeClassifier(max_depth=depth,min_samples_leaf=min_samples_leaf,min_samples_split=min_samples_split)
     tree.fit(train,labels)
     return tree
-
     
 
   #MIROR#########################
@@ -164,6 +206,5 @@ def miroir(state):
         state.player_state(idteam,idplayer).position=miroir_point(state.player_state(idteam,idplayer).position)
         state.player_state(idteam,idplayer).vitesse=miroir_v(state.player_state(idteam,idplayer).vitesse)        
     return state
-
 
     ###########################################

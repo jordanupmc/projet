@@ -9,15 +9,17 @@ soccersimulator.show(match)
 ## Sauvegarde des exemples, mettre False a True si concatenation des fichiers
 #strat_key.write("test.tree",False)
 
+
 ## Lecture du fichier cree
 exemples = KeyboardStrategy.read("./test.tree")
 ## constitution de la base d'entrainement et des labels
-train,labels = build_apprentissage("./test.tree",gen_feat)
+train,labels = build_apprentissage("./test.tree",gen_features)
 ## apprentissage de l'arbre
 tree = apprendre_arbre(train,labels)
 ## sauvegarde de l'arbre
 cPickle.dump(tree,file("tree.pkl","w")) #tree.pkl
 
+print affiche_arbre(tree)
 
 """
 tournoi=SoccerTournament(1)
