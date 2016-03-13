@@ -22,7 +22,7 @@ class App(object):
     def ball_vitesse(self):
         return self.state.ball.vitesse
 
-    def can_shoot(self):
+    def can_shoot(self): #0 je peux shooter, 1 je ne peux pas
         if self.my_position.distance(self.ball_position) <= (settings.BALL_RADIUS+settings.PLAYER_RADIUS):
             return 0
         return 1
@@ -34,11 +34,22 @@ class App(object):
         return SoccerAction(Vector2D(settings.GAME_GOAL_HEIGHT/1.1,settings.GAME_HEIGHT/2)-self.my_position,Vector2D())
         #    return SoccerAction(Vector2D(settings.GAME_WIDTH-(settings.GAME_GOAL_HEIGHT/1.5),settings.GAME_HEIGHT/2)-self.my_position,Vector2D())
         
-    def conduire_ball(self):
-        return SoccerAction(self.state.ball.position-self.my_position,Vector2D(1.2,0))
+    def conduire_ball(self):    
+        hisg = Vector2D((2-self.key[0])*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.)
+        shoot=hisg-self.state.ball.position
+
+        s=SoccerAction(self.state.ball.position-self.my_position, shoot)
+        s.shoot.norm=1.3
+        if self.key[0]==2:
+            s.acceleration.x=-s.acceleration.x
+            s.shoot.x=-s.shoot.x
+        #s.acceleration.norm=s.acceleration.norm-1
+        return s
+
+#return SoccerAction(self.state.ball.position-self.my_position,Vector2D(1.2,0))
 
     
-    def is_ball_near_goal(self, pourcentage): #test si la balle est a WIDTH/pourcentage des cages
+    def is_ball_near_goal(self, pourcentage): #test si la balle est a WIDTH/pourcentage des cages adverse
         if self.key[0] == 1:
             if self.ball_position.x > (settings.GAME_WIDTH)-(settings.GAME_WIDTH/pourcentage): #and self.ball_position.y < (settings.GAME_WIDTH)-settings.GAME_WIDTH/4 and self.ball_position.y > settings.GAME_WIDTH/4:
                 return 0
@@ -81,12 +92,19 @@ class App(object):
                 return 0
         return 1
 
+    def switch_to_gardien(self): #0 la balle est a une distance qui incite a revenir gardien
+        #if self.key[0] == 1:
+        if self.ball_position.x<=((2-self.key[0])*settings.GAME_WIDTH)/2.2:
+            return 0
+        return 1
+        '''     
+  else
+            if self.ball_position.x>=settings.GAME_WIDTH-(settings.GAME_WIDTH/2.9):
+                return 0
+        return 1
+        '''
+
     def enemy_close_position(self):
-        """
-        description de la fonction
-        comment elle le réalise
-        """
-        #i : 
         i=0
         ii=0
         for k in range(len(self.state.players)-1):

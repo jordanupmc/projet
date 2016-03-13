@@ -21,6 +21,7 @@ class FonceurStrategy(BaseStrategy):
 
     def compute_strategy(self, state,id_team, id_player):
         a=App(state,id_team,id_player)
+        
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
             return miroir_action(fonceur(a))
@@ -36,9 +37,8 @@ class GardienStrategy(BaseStrategy):
             
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
-
         
-        if a.near_ball(20) == 1 or a.is_out_goal()==0:
+        if a.near_ball(20) == 1 or a.is_out_goal()==0: #nearball(20)
             if a.key[0] ==2:
                return miroir_action(gardien(a))
             return gardien(a)
@@ -51,23 +51,46 @@ class GardienStrategy(BaseStrategy):
 class OneOneStrategy(BaseStrategy):
     def __init__(self):
         BaseStrategy.__init__(self, "OnevOne")
+        self.shoot=0
+
     def compute_strategy(self, state,id_team, id_player):
         a=App(state,id_team,id_player)
         
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
+        if a.ball_vitesse == Vector2D() and a.ball_position.x==settings.GAME_WIDTH/2 and a.ball_position.y==settings.GAME_HEIGHT/2: #engagement on reduit l'acceleration du joueur 
+            s=go_vers_ball(a)+degage_cote(a)
+            s.acceleration.norm=settings.maxPlayerAcceleration/2.
+            s.shoot.norm=1.6 
+            self.shoot=0
+            if a.key[0]==2: #miroir fail 
+                s.acceleration.x=-s.acceleration.x
+                s.shoot.x=-s.shoot.x
+        
+            return s
+        
+        if self.shoot==1: #j'ai shooter en etant gardien donc je fonce     
+            if a.key[0]==2:
+                return miroir_action(fonceur(a))
+            return fonceur(a)
+
+        if a.switch_to_gardien() == 0 and a.can_shoot==1: #on passe gardien  #and can_shoot==1?
             
-        if a.is_ball_in_my_camp() == 0 :
             if a.near_ball(20) == 1 or a.is_out_goal()==0:
-                if a.key[0] ==2:
-                    return miroir_action(gardien(a))
-            return gardien(a)
+                g=gardien(a)
+                if g.shoot.norm != 0:
+                    self.shoot=1
+                else:
+                    self.shoot=0
+                if a.key[0] == 2:
+                    return miroir_action(g)
+                return g
         
             if a.key[0] ==2:
                 return miroir_action(go_vers_ball(a))+miroir_action(degager(a))
         
             return go_vers_ball(a)+degage_cote(a)
-        else:
+        else:             #FONCEUR
             if a.key[0]==2:
                 return miroir_action(fonceur(a))
             return fonceur(a)
@@ -109,9 +132,21 @@ def affiche_arbre(tree):
 def go_vers_ball(app):
     return app.vers_ball()
 
-def degager(app):
+def degager(app):       
+    hisg = Vector2D((2-app.key[0])*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.)
+    shoot=hisg-app.ball_position
+    
+    s=SoccerAction(app.ball_position-app.my_position, shoot)
+    s.shoot.norm=4
+    
+    if app.key[0]==2: #miroir fail 
+        s.acceleration.x=-s.acceleration.x
+        s.shoot.x=-s.shoot.x
+        
     if app.can_shoot() == 0:
-        return SoccerAction(Vector2D(),Vector2D(5,0)) 
+        return s
+
+#return SoccerAction(Vector2D(),Vector2D(5,0)) 
     return SoccerAction(Vector2D(),Vector2D())
 
 def conduite_ball(app):
@@ -121,7 +156,7 @@ def conduite_ball(app):
 
 
 def fonceur(a):
-    if a.is_ball_near_goal(3.8) == 0:#3.8
+    if a.is_ball_near_goal(3.1) == 0:#3.8
         return go_vers_ball(a)+degager(a)
     return go_vers_ball(a)+conduite_ball(a)
 
@@ -139,12 +174,12 @@ def gardien(a):
 def degage_cote(a):
     dep=a.ball_position-a.my_position            #--> bloquer le passage de la balle 
     dep.x=0
-    if a.can_shoot() == 0:  # Shoot ou pas
-        
-        if a.ball_position.y >= settings.GAME_HEIGHT/2: 
-            return SoccerAction(dep,Vector2D((3.14),5)) # angle a modifie
+    
+    if a.can_shoot() == 0:  # Shoot ou pas        
+        if a.my_position.y >= settings.GAME_HEIGHT/2: 
+            return SoccerAction(dep,Vector2D((3.14),4.5)) # angle a modifie
         else:
-            return SoccerAction(dep,Vector2D(-(3.14),5))
+            return SoccerAction(dep,Vector2D(-(3.14),4.5))
     return SoccerAction(dep,Vector2D())
 
 ###Tree#########
@@ -163,6 +198,7 @@ def gen_features(state, id_team, id_player):
 
 #distance de l'adversaire le plus proche
     enemy_pos=a.enemy_close_position()
+
 #score actuel ?
 #nb de joueurs ?
 

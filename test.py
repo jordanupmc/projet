@@ -1,5 +1,5 @@
 from Strat import *
-from team import team1, team2, team4, team11, strat_key 
+from team import team1, team2, team4, team11#, strat_key 
 import cPickle
 
 match=SoccerMatch(team1,team11)
@@ -19,7 +19,7 @@ tree = apprendre_arbre(train,labels)
 ## sauvegarde de l'arbre
 cPickle.dump(tree,file("tree.pkl","w")) #tree.pkl
 
-print affiche_arbre(tree)
+#print affiche_arbre(tree)
 
 """
 tournoi=SoccerTournament(1)
