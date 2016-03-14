@@ -259,14 +259,19 @@ def q_etat(state, id_team, id_player):
     return [ (x_player-x_ball, y_player-y_ball) , (x_enemygoal-x_ball,y_enemygoal-y_ball), (x_mygoal-x_ball,y_mygoal-y_ball) ]
 
 def q_action(a):
-    if a.idteam==2:
-         return [ miroir_action(pass_j1(a)), miroir_action(conduite_ball(a)) ]
-    return [ pass_j1(a), conduite_ball(a), fonceur(a), degager(a), gardien(a)]
+    #if a.idteam==2:
+    #     return [ miroir_action(pass_j1(a)), miroir_action(conduite_ball(a)) ]
+    return [ pass_j1(a), fonceur(a), gardien(a)]
 
-def q_reward(state):
+def q_reward(a):
+    #exemple
+    #si j'ai la balle return 1
+    #marque un but 100
+    #perte de balle -5
+    
     return
 
-def q_value(etat,action):
+def q_value(state,action):
     
   #MIROR#########################
 
