@@ -55,9 +55,11 @@ class OneOneStrategy(BaseStrategy):
 
     def compute_strategy(self, state,id_team, id_player):
         a=App(state,id_team,id_player)
+        q_etat(state,id_team,id_player)
         
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
+       # return passe_j1(a)+go_vers_ball(a)
         if a.ball_vitesse == Vector2D() and a.ball_position.x==settings.GAME_WIDTH/2 and a.ball_position.y==settings.GAME_HEIGHT/2: #engagement on reduit l'acceleration du joueur 
             s=go_vers_ball(a)+degage_cote(a)
             s.acceleration.norm=settings.maxPlayerAcceleration/2.
@@ -68,7 +70,7 @@ class OneOneStrategy(BaseStrategy):
                 s.shoot.x=-s.shoot.x
         
             return s
-        
+      
         if self.shoot==1: #j'ai shooter en etant gardien donc je fonce     
             if a.key[0]==2:
                 return miroir_action(fonceur(a))
@@ -182,6 +184,19 @@ def degage_cote(a):
             return SoccerAction(dep,Vector2D(-(3.14),4.5))
     return SoccerAction(dep,Vector2D())
 
+def passe_j1(a):
+    if a.can_shoot()==1:
+        return SoccerAction()
+    friend=a.position_j1()
+    s=SoccerAction(Vector2D(),friend-a.ball_position)
+    s.shoot.norm=2.8
+    
+    if a.key[0]==2: #miroir fail 
+        s.acceleration.x=-s.acceleration.x
+        s.shoot.x=-s.shoot.x
+    return s
+        
+
 ###Tree#########
 
 def gen_features(state, id_team, id_player):
@@ -221,7 +236,38 @@ def apprendre_arbre(train,labels,depth=5,min_samples_leaf=2,min_samples_split=2)
     tree.fit(train,labels)
     return tree
     
+#######################Q-LEARNING##################
 
+def position_to_grille(grille,position):
+    pas_x = settings.GAME_WIDTH / grille
+    pas_y = settings.GAME_HEIGHT / grille
+
+    l = position.y / pas_y #ligne
+    c = position.x / pas_x #colonne
+    return c,l
+    
+def q_etat(state, id_team, id_player):
+    a=App(state,id_team,id_player)
+    grille=7
+    
+    x_player,y_player=position_to_grille(grille,a.my_position)
+    x_ball,y_ball=position_to_grille(grille,a.ball_position)
+    x_mygoal,y_mygoal =position_to_grille(grille,Vector2D((id_team-1)*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.))
+    x_enemygoal,y_enemygoal = position_to_grille(grille,Vector2D((2-id_team)*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.))
+    
+                           #distance joueur ball           distance goal enemy,ball            distance mon goal, ball
+    return [ (x_player-x_ball, y_player-y_ball) , (x_enemygoal-x_ball,y_enemygoal-y_ball), (x_mygoal-x_ball,y_mygoal-y_ball) ]
+
+def q_action(a):
+    if a.idteam==2:
+         return [ miroir_action(pass_j1(a)), miroir_action(conduite_ball(a)) ]
+    return [ pass_j1(a), conduite_ball(a), fonceur(a), degager(a), gardien(a)]
+
+def q_reward(state):
+    return
+
+def q_value(etat,action):
+    
   #MIROR#########################
 
 def miroir_point(p):

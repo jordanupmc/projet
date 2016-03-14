@@ -22,6 +22,7 @@ class App(object):
     def ball_vitesse(self):
         return self.state.ball.vitesse
 
+            
     def can_shoot(self): #0 je peux shooter, 1 je ne peux pas
         if self.my_position.distance(self.ball_position) <= (settings.BALL_RADIUS+settings.PLAYER_RADIUS):
             return 0
@@ -123,11 +124,22 @@ class App(object):
 
             it,ip=self.state.players[i]
         return self.state.player_state(it,ip).position
-
  #    def friend_close_position(self):
-        
+
+    
+    #position du coequipier en 2v2
+    def position_j1(self):
+        for k in range(len(self.state.players)-1):
+            id_team,id_player = self.state.players[k]
+            if id_team == self.key[0] and id_player != self.key[1]:
+                p=self.state.player_state(id_team,id_player)
+                return p.position
+        return Vecor2D()
 
 #func
 #ball dans quel moitie de terrain
 #
 
+
+
+    

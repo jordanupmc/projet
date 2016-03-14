@@ -1,8 +1,8 @@
 from Strat import *
-from team import team1, team2, team4, team11#, strat_key 
+from team import team1, team2,team22, team4, team11#, strat_key 
 import cPickle
 
-match=SoccerMatch(team1,team11)
+match=SoccerMatch(team2,team22)
 #match.play()
 soccersimulator.show(match)
 
