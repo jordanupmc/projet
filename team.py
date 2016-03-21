@@ -26,6 +26,6 @@ strat_key.add("e",GardienStrategy())
 #team11=SoccerTeam("equipe11",[Player("Costa",strat_key)])
 
 team2=SoccerTeam("equipe2",[Player("Zizou",OneOneStrategy()),Player("Bravo",GardienStrategy())])
-team22=SoccerTeam("equipe2",[Player("Zizou",GardienStrategy()),Player("Bravo",GardienStrategy())])
+team22=SoccerTeam("equipe2",[Player("Zizou",OneOneStrategy()),Player("Bravo",GardienStrategy())])
 
 team4=SoccerTeam("equipe4",[Player("t3j1",OneOneStrategy()),Player("Zizou",FonceurStrategy()),Player("Bravo",GardienStrategy()),Player("Muller",GardienStrategy())])
