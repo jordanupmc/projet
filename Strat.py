@@ -13,6 +13,9 @@ class RandomStrategy(BaseStrategy):
         BaseStrategy.__init__(self, "Random")
 
     def compute_strategy(self, state,id_team, id_player):
+        fichier=open("data.txt", "a")
+        fichier.write("\nBonjour monde")
+        fichier.close()
         return SoccerAction(Vector2D.create_random(-1,1),Vector2D.create_random(-1,1))
 
  
@@ -25,6 +28,7 @@ class FonceurStrategy(BaseStrategy):
         
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
+            
             return miroir_action(fonceur(a))
         return fonceur(a)
  
@@ -34,6 +38,7 @@ class GardienStrategy(BaseStrategy):
         BaseStrategy.__init__(self, "Gardien")
 
     def compute_strategy(self, state,id_team, id_player):
+        
         a=App(state,id_team,id_player)
             
         if a.key[0]==2:
@@ -64,7 +69,9 @@ class OneOneStrategy(BaseStrategy):
         q_reward(qe)
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
+            
        # return passe_j1(a)+go_vers_ball(a)
+       
         if a.ball_vitesse == Vector2D() and a.ball_position.x==settings.GAME_WIDTH/2 and a.ball_position.y==settings.GAME_HEIGHT/2: #engagement on reduit l'acceleration du joueur 
             s=go_vers_ball(a)+degage_cote(a)
             s.acceleration.norm=settings.maxPlayerAcceleration/2.
@@ -120,19 +127,19 @@ class DTreeStrategy(BaseStrategy):
             return SoccerAction()
         return self.dic[label].compute_strategy(state,id_team,id_player)
     
-def affiche_arbre(tree):
-    long = 10
-    sep1="|"+"-"*(long-1)
-    sepl="|"+" "*(long-1)
-    sepr=" "*long
-    def aux(node,sep):
-        if tree.tree_.children_left[node]<0:
-            ls ="(%s)" % (", ".join( "%s: %d" %(tree.classes_[i],int(x)) for i,x in enumerate(tree.tree_.value[node].flat)))
-            return sep+sep1+"%s\n" % (ls,)
-        return (sep+sep1+"X%d<=%0.2f\n"+"%s"+sep+sep1+"X%d>%0.2f\n"+"%s" )% \
-                    (tree.tree_.feature[node],tree.tree_.threshold[node],aux(tree.tree_.children_left[node],sep+sepl),
-                    tree.tree_.feature[node],tree.tree_.threshold[node],aux(tree.tree_.children_right[node],sep+sepr))
-    return aux(0,"")
+    def affiche_arbre(tree):
+        long = 10
+        sep1="|"+"-"*(long-1)
+        sepl="|"+" "*(long-1)
+        sepr=" "*long
+        def aux(node,sep):
+            if tree.tree_.children_left[node]<0:
+                ls ="(%s)" % (", ".join( "%s: %d" %(tree.classes_[i],int(x)) for i,x in enumerate(tree.tree_.value[node].flat)))
+                return sep+sep1+"%s\n" % (ls,)
+            return (sep+sep1+"X%d<=%0.2f\n"+"%s"+sep+sep1+"X%d>%0.2f\n"+"%s" )% \
+                (tree.tree_.feature[node],tree.tree_.threshold[node],aux(tree.tree_.children_left[node],sep+sepl),
+                 tree.tree_.feature[node],tree.tree_.threshold[node],aux(tree.tree_.children_right[node],sep+sepr))
+        return aux(0,"")
 
 #################
 
@@ -272,26 +279,34 @@ def q_etat(state, id_team, id_player): #discretisation
     x_ball,y_ball=position_to_grille(grille,a.ball_position)
     x_mygoal,y_mygoal =position_to_grille(grille,Vector2D((id_team-1)*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.))
     x_enemygoal,y_enemygoal = position_to_grille(grille,Vector2D((2-id_team)*settings.GAME_WIDTH,settings.GAME_HEIGHT/2.))
-
-                           #0. distance joueur ball          1. distance goal enemy,ball            2.distance mon goal, ball
+             
     return ( (x_player-x_ball, y_player-y_ball) , (x_enemygoal-x_ball,y_enemygoal-y_ball), (x_mygoal-x_ball,y_mygoal-y_ball) )
 
 
+##########ID DES CASES DU TABLEAU Q_ETAT#########
+D_J_B=0   #distance joueur ball 
+D_Genemy_B=1   #distance goal enemy,ball 
+D_MyG_B=2 #distance mon goal, ball
+
+
+
 def q_reward(s,a):
-    if s[0]== (0,0) and a.name=="conduite_ball": #distance joueur ball
+    if s[D_J_B]== (0,0) and a.name=="conduite_ball": #distance joueur ball
         return 5
     else:
         return -1
 
-    if s[2] == (0,0): #l'adversaire a mis un but
+    if s[D_MyG_B] == (0,0): #l'adversaire a mis un but
         return -100
 
-    if s[1] == (0,0): #je viens de marquer
+    if s[D_Genemy_B] == (0,0): #je viens de marquer
         return 100
 
 # q(s,a) : dict : s -> (dict : a -> reel)
 #q[s][a]+
     #scenario : [(etat,action),(etat,None)]
+
+    #alpha critere de convergence
     
 def learn_q(id_team=0, id_player=0,q=None,scenario=None,alpha=0.1,gamma = 0.9):
     if q is None:
@@ -310,7 +325,7 @@ def learn_q(id_team=0, id_player=0,q=None,scenario=None,alpha=0.1,gamma = 0.9):
 
 def ia_q(q,s):
     actions = q[s]
-    return sorted(actions.items(),key = lambda x:x[1],reverse = True)[0]
+    return sorted(actions.items(),key = lambda x:x[1],reverse = True)[0] #sort l'action avec la plus grande recompense
 
 
 

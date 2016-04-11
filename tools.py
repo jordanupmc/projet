@@ -134,12 +134,25 @@ class App(object):
             if id_team == self.key[0] and id_player != self.key[1]:
                 p=self.state.player_state(id_team,id_player)
                 return p.position
-        return Vecor2D()
+        return Vector2D()
+
+    def shoot_tme(self):
+        p=self.state.player(self.key[0],self.key[1])
+        if p.vitesse.norm < 0.01:
+            return 0
+        return 1
+
+    
+
+        
+    
 
 #func
 #ball dans quel moitie de terrain
 #
 
+
+### tme
 
 
     

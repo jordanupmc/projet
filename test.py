@@ -8,7 +8,6 @@ soccersimulator.show(match)
 
 ## Sauvegarde des exemples, mettre False a True si concatenation des fichiers
 #strat_key.write("test.tree",False)
-
 """
 ## Lecture du fichier cree
 exemples = KeyboardStrategy.read("./test.tree")
