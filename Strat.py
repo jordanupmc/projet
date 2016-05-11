@@ -13,9 +13,6 @@ class RandomStrategy(BaseStrategy):
         BaseStrategy.__init__(self, "Random")
 
     def compute_strategy(self, state,id_team, id_player):
-        fichier=open("data.txt", "a")
-        fichier.write("\nBonjour monde")
-        fichier.close()
         return SoccerAction(Vector2D.create_random(-1,1),Vector2D.create_random(-1,1))
 
  
@@ -45,13 +42,17 @@ class GardienStrategy(BaseStrategy):
             a=App(miroir(state),id_team,id_player)
         
         if a.near_ball(20) == 1 or a.is_out_goal()==0: #nearball(20)
-            res=gardien(a)
+            res=gardien(a)           
+            res.acceleration.norm=settings.maxPlayerAcceleration/2.2
+
             res.name="gardien"
             if a.key[0] ==2:
                return miroir_action(res)
             return res
 
-        res=go_vers_ball(a)+degage_cote(a)
+        res=go_vers_ball(a)+degage_cote(a)   
+        res.acceleration.norm=settings.maxPlayerAcceleration/2.2
+
         res.name="go_vers_ball+degage_cote"
         if a.key[0] ==2:
            return miroir_action(res)
@@ -65,12 +66,11 @@ class OneOneStrategy(BaseStrategy):
 
     def compute_strategy(self, state,id_team, id_player):
         a=App(state,id_team,id_player)
-        qe=q_etat(state,id_team,id_player)
-        q_reward(qe)
+        
         if a.key[0]==2:
             a=App(miroir(state),id_team,id_player)
             
-       # return passe_j1(a)+go_vers_ball(a)
+        #return miroir_action(passe_j1(a)+go_vers_ball(a))
        
         if a.ball_vitesse == Vector2D() and a.ball_position.x==settings.GAME_WIDTH/2 and a.ball_position.y==settings.GAME_HEIGHT/2: #engagement on reduit l'acceleration du joueur 
             s=go_vers_ball(a)+degage_cote(a)
@@ -83,7 +83,8 @@ class OneOneStrategy(BaseStrategy):
         
             return s
       
-        if self.shoot==1: #j'ai shooter en etant gardien donc je fonce     
+        if self.shoot==1: #j'ai shooter en etant gardien donc je fonce
+            self.shoot=0
             if a.key[0]==2:
                 return miroir_action(fonceur(a))
             return fonceur(a)
@@ -108,8 +109,16 @@ class OneOneStrategy(BaseStrategy):
             if a.key[0]==2:
                 return miroir_action(fonceur(a))
             return fonceur(a)
-            
+          
 
+class CampeurStrategy(BaseStrategy):
+    def __init__(self):
+        BaseStrategy.__init__(self, "Campeur")
+
+    def compute_strategy(self, state,id_team, id_player):
+        a=App(state,id_team,id_player)
+        return campeur(a)   
+   
 class DTreeStrategy(BaseStrategy):
     def __init__(self,tree,dic,gen_feat):
         BaseStrategy.__init__(self,"Tree Strategy")
@@ -145,7 +154,7 @@ class DTreeStrategy(BaseStrategy):
 
 def go_vers_ball(app):
     res= app.vers_ball()
-    res.name="go_vers_ball"
+    #res.name="go_vers_ball"
     return res
 
 def degager(app):       
@@ -206,18 +215,41 @@ def degage_cote(a):
             res.name="degage_cote_bas"
             return res
     return SoccerAction(dep,Vector2D())
+     
+def campeur(a):
+    rayon=22
+    if a.key[0]==2 and a.my_position.x >= settings.GAME_WIDTH/2.5:
+        return SoccerAction(Vector2D(settings.GAME_WIDTH/2.5,settings.GAME_HEIGHT/3)-a.my_position,Vector2D())
+    else:
+        if a.key[0]==2:    
+            a=App(miroir(a.state),a.key[0],a.key[1])
+            if a.my_position.distance(a.ball_position) <= (settings.BALL_RADIUS+settings.PLAYER_RADIUS)*rayon:
+                return miroir_action(fonceur(a))
+            else: 
+                return SoccerAction(Vector2D.create_random(-1,1),Vector2D())
+
+        else:
+            if a.my_position.x <= settings.GAME_WIDTH-settings.GAME_WIDTH/2.5:
+                return SoccerAction(Vector2D(settings.GAME_WIDTH-settings.GAME_WIDTH/2.5,settings.GAME_HEIGHT/3)-a.my_position,Vector2D())
+            else:
+                 if a.my_position.distance(a.ball_position) <= (settings.BALL_RADIUS+settings.PLAYER_RADIUS)*rayon:
+                     return fonceur(a)
+                 else: 
+                     return SoccerAction(Vector2D.create_random(-1,1),Vector2D())
+
 
 def passe_j1(a):
     if a.can_shoot()==1:
         return SoccerAction()
     friend=a.position_j1()
     s=SoccerAction(Vector2D(),friend-a.ball_position)
-    s.shoot.norm=2.8
-    
+
+    s.shoot.norm=2.5
+    """
     if a.key[0]==2: #miroir fail 
         s.acceleration.x=-s.acceleration.x
         s.shoot.x=-s.shoot.x
-    s.name="passe_j1"
+    """
     return s
         
 
@@ -290,28 +322,31 @@ D_MyG_B=2 #distance mon goal, ball
 
 
 
-def q_reward(s,a):
-    if s[D_J_B]== (0,0) and a.name=="conduite_ball": #distance joueur ball
-        return 5
+def q_reward(s,a=None):
+    r=0
+    if s[D_J_B]== (0,0): #and a!= None and a.name=="conduite_ball": #distance joueur ball
+        r+=5
     else:
-        return -1
+        r+=-1
 
-    if s[D_MyG_B] == (0,0): #l'adversaire a mis un but
-        return -100
+    if s[D_MyG_B][0] == (0): #l'adversaire a mis un but
+        r+= -100
 
-    if s[D_Genemy_B] == (0,0): #je viens de marquer
-        return 100
+    if s[D_Genemy_B][0] == (0): #je viens de marquer
+        r+=100
 
+
+    return r
 # q(s,a) : dict : s -> (dict : a -> reel)
 #q[s][a]+
     #scenario : [(etat,action),(etat,None)]
 
     #alpha critere de convergence
     
-def learn_q(id_team=0, id_player=0,q=None,scenario=None,alpha=0.1,gamma = 0.9):
+def learn_q(id_team=1, id_player=0,q=None,scenario=None,alpha=0.1,gamma = 0.9):
     if q is None:
         q = dict()
-    R = q_reward(scenario[-1][0]) #On commence avec le dernier etat
+    R = q_reward(q_etat(scenario[-1][0],id_team,id_player)) #On commence avec le dernier etat
     for (etat,action) in  scenario[-2::-1]:
         state = q_etat(etat,id_team, id_player)
         if state is not q:
@@ -319,7 +354,7 @@ def learn_q(id_team=0, id_player=0,q=None,scenario=None,alpha=0.1,gamma = 0.9):
         if action is not q[state]:
             q[state][action] = 0. # ou  random
         q[state][action] = q[state][action]+alpha*(R-q[state][action])
-        R = gamma*R+q_reward(state)
+        R = gamma*R+q_reward(state,action)
         
     return q
 
@@ -327,14 +362,19 @@ def ia_q(q,s):
     actions = q[s]
     return sorted(actions.items(),key = lambda x:x[1],reverse = True)[0] #sort l'action avec la plus grande recompense
 
-
-
 class QStrategy(BaseStrategy):
     def __init__(self):
         BaseStrategy.__init__(self, "QStrategy")
+        try:
+            f=open('dico.pkl','rb')
+            self.qlearn=cPickle.load(f)
+            f.close()
+        except IOError:
+            self.qlearn=None
 
     def compute_strategy(self, state,id_team, id_player):
-        return ia_q(qlearn,state)
+        print ia_q(self.qlearn,q_etat(state,id_team,id_player))[0][0]
+        return SoccerAction()
         
   #MIROR#########################
 
@@ -345,7 +385,7 @@ def miroir_v(v):
     return Vector2D(-v.x,v.y)
 
 def miroir_action(action):
-    action.name=action.name
+    #action.name=action.name
     action.acceleration=miroir_v(action.acceleration)
     action.shoot=miroir_v(action.shoot)
  
